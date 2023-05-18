@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import confetti from 'canvas-confetti'
 
 const TURNS = { X: 'X', O: 'O' }
 
@@ -21,24 +22,24 @@ const Square = ({ children, isSelected, updateBoard, index }) => {
 }
 
 function App() {
-// LA OPERACION DE ACTUALIZAR UN ESTADO ES SINCRONA, 
-// SI EN ALGUNA FUNCION USTED ACTUALIZA UN ESTADO Y LO IMPRIME EN TERMINAL, VERA EL ESTADO ANTERIOR
-// PORQUE CAMBIAR EL ESTADO TARDA ALGUNOS MILISEGUNDOS, Y LA OPERACION DE IMPRIMIR EL VALOR DEL ESTADO
-// NO VA ESPERAR A QUE EL ESTADO SE ACTUALICE (DEBE TENERLO EN CUENTA, OBSEVELO EN LA LINEA 67)
-/* 
-    SOLUCION A LO ANTERIOR: 
-setState((prevState) => {
-  console.log(`estado anterio ${prevState} y nuevo estado ${newState}`)
-  return newState
-  }
-)
-*/  
+  // LA OPERACION DE ACTUALIZAR UN ESTADO ES SINCRONA, 
+  // SI EN ALGUNA FUNCION USTED ACTUALIZA UN ESTADO Y LO IMPRIME EN TERMINAL, VERA EL ESTADO ANTERIOR
+  // PORQUE CAMBIAR EL ESTADO TARDA ALGUNOS MILISEGUNDOS, Y LA OPERACION DE IMPRIMIR EL VALOR DEL ESTADO
+  // NO VA ESPERAR A QUE EL ESTADO SE ACTUALICE (DEBE TENERLO EN CUENTA, OBSEVELO EN LA LINEA 72)
+  /* 
+      SOLUCION A LO ANTERIOR: 
+  setState((prevState) => {
+    console.log(`estado anterio ${prevState} y nuevo estado ${newState}`)
+    return newState
+    }
+  )
+  */
 
   const [board, setBoard] = useState(Array(9).fill(null))
   const [turn, setTurn] = useState(TURNS.X)
-  const [winer, setWiner] = useState(null)
+  const [winner, setWinner] = useState(null)
 
-  const checkWiner = (boardToCheck) => {
+  const checkWinner = (boardToCheck) => {
     for (let combo of winner_combos) {
       const [a, b, c] = combo
       if (
@@ -50,8 +51,12 @@ setState((prevState) => {
     return null
   }
 
+  const checkEndGame = (newBoard) => {
+    return newBoard.every((square) => square != null) // Every verifica que ningun elemeto del array sea null
+  }
+
   const updateBoard = (index) => {
-    if (board[index] || winer) return
+    if (board[index] || winner) return
 
     const newBoard = [...board]
     newBoard[index] = turn
@@ -60,16 +65,26 @@ setState((prevState) => {
     const newTurn = turn == TURNS.X ? TURNS.O : TURNS.X
     setTurn(newTurn)
 
-    const newWiner = checkWiner(newBoard)
-    if(newWiner) {
-      setWiner(newWiner)
-      console.log(winer)
-    } 
+    const newWinner = checkWinner(newBoard)
+    if (newWinner) {
+      confetti()
+      setWinner(newWinner)
+      console.log(winner)
+    } else if (checkEndGame(newBoard)) {
+      setWinner(false)
+    }
+  }
+
+  const resetGame = () => {
+    setBoard(Array(9).fill(null))
+    setTurn(TURNS.X)
+    setWinner(null)
   }
 
   return (
     <main className='board'>
       <h1>Game</h1>
+      <button onClick={resetGame}>Reset juego</button>
       <section className='game'>
         {
           board.map((e, index) => {
@@ -90,6 +105,29 @@ setState((prevState) => {
         <Square isSelected={turn == TURNS.X}>{TURNS.X}</Square>
         <Square isSelected={turn == TURNS.O}>{TURNS.O}</Square>
       </section>
+
+      {
+        winner != null && (
+          <section className='winner'>
+            <div className='text'>
+              <h2>
+                {
+                  winner == false ? 'Empate' : 'Gana ' + winner
+                }
+              </h2>
+
+              <header className='win'>
+                {winner && <Square>{winner}</Square>}
+              </header>
+
+              <footer>
+                <button onClick={resetGame}>Empezar de nuevo</button>
+              </footer>
+            </div>
+          </section>
+        )
+      }
+
     </main>
   )
 }
