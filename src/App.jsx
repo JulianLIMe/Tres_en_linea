@@ -1,33 +1,18 @@
 import { useState } from 'react'
 import confetti from 'canvas-confetti'
-
-const TURNS = { X: 'X', O: 'O' }
-
-const winner_combos = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
-]
-
-const Square = ({ children, isSelected, updateBoard, index }) => {
-
-  const className = `square ${isSelected ? 'is-selected' : ''}`
-  const handleClick = () => {
-    updateBoard(index)
-  }
-
-  return (
-    <div className={className} onClick={handleClick}>
-      {children}
-    </div>
-  )
-}
+import { TURNS } from './constants.js'
+import { Square } from './components/Square.jsx'
+import { Winner } from './components/Winner.jsx'
+import { checkWinner } from './logic/checkWinner.js'
 
 function App() {
-  // LA OPERACION DE ACTUALIZAR UN ESTADO ES SINCRONA, 
-  // SI EN ALGUNA FUNCION USTED ACTUALIZA UN ESTADO Y LO IMPRIME EN TERMINAL, VERA EL ESTADO ANTERIOR
-  // PORQUE CAMBIAR EL ESTADO TARDA ALGUNOS MILISEGUNDOS, Y LA OPERACION DE IMPRIMIR EL VALOR DEL ESTADO
-  // NO VA ESPERAR A QUE EL ESTADO SE ACTUALICE (DEBE TENERLO EN CUENTA, OBSEVELO EN LA LINEA 72)
-  /* 
-      SOLUCION A LO ANTERIOR: 
+  /*
+  LA OPERACION DE ACTUALIZAR UN ESTADO ES SINCRONA, 
+  SI EN ALGUNA FUNCION USTED ACTUALIZA UN ESTADO Y LO IMPRIME EN TERMINAL, VERA EL ESTADO ANTERIOR
+  PORQUE CAMBIAR EL ESTADO TARDA ALGUNOS MILISEGUNDOS, Y LA OPERACION DE IMPRIMIR EL VALOR DEL ESTADO
+  NO VA ESPERAR A QUE EL ESTADO SE ACTUALICE (DEBE TENERLO EN CUENTA, OBSEVELO EL cons.log DE LA LINEA 55)
+   
+  ##### SOLUCION A LO ANTERIOR ##### 
   setState((prevState) => {
     console.log(`estado anterio ${prevState} y nuevo estado ${newState}`)
     return newState
@@ -35,21 +20,15 @@ function App() {
   )
   */
 
-  const [board, setBoard] = useState(Array(9).fill(null))
-  const [turn, setTurn] = useState(TURNS.X)
+  const [board, setBoard] = useState(() => {
+    const boardFromStorage = window.sessionStorage.getItem('board')
+    return boardFromStorage ? JSON.parse(boardFromStorage) : Array(9).fill(null)
+  })
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.sessionStorage.getItem('turn')
+    return turnFromStorage ? turnFromStorage : TURNS.X
+  })
   const [winner, setWinner] = useState(null)
-
-  const checkWinner = (boardToCheck) => {
-    for (let combo of winner_combos) {
-      const [a, b, c] = combo
-      if (
-        boardToCheck[a] &&
-        boardToCheck[a] == boardToCheck[b] &&
-        boardToCheck[b] == boardToCheck[c]
-      ) return boardToCheck[a]
-    }
-    return null
-  }
 
   const checkEndGame = (newBoard) => {
     return newBoard.every((square) => square != null) // Every verifica que ningun elemeto del array sea null
@@ -65,6 +44,10 @@ function App() {
     const newTurn = turn == TURNS.X ? TURNS.O : TURNS.X
     setTurn(newTurn)
 
+    // Persistencia de datos
+    window.sessionStorage.setItem('board', JSON.stringify(newBoard))
+    window.sessionStorage.setItem('turn', turn)
+
     const newWinner = checkWinner(newBoard)
     if (newWinner) {
       confetti()
@@ -79,6 +62,9 @@ function App() {
     setBoard(Array(9).fill(null))
     setTurn(TURNS.X)
     setWinner(null)
+
+    window.sessionStorage.removeItem('board')
+    window.sessionStorage.removeItem('turn')
   }
 
   return (
@@ -106,27 +92,7 @@ function App() {
         <Square isSelected={turn == TURNS.O}>{TURNS.O}</Square>
       </section>
 
-      {
-        winner != null && (
-          <section className='winner'>
-            <div className='text'>
-              <h2>
-                {
-                  winner == false ? 'Empate' : 'Gana ' + winner
-                }
-              </h2>
-
-              <header className='win'>
-                {winner && <Square>{winner}</Square>}
-              </header>
-
-              <footer>
-                <button onClick={resetGame}>Empezar de nuevo</button>
-              </footer>
-            </div>
-          </section>
-        )
-      }
+      <Winner winner={winner} resetGame={resetGame}></Winner>
 
     </main>
   )
