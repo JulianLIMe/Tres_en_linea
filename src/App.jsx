@@ -46,7 +46,7 @@ function App() {
 
     // Persistencia de datos
     window.sessionStorage.setItem('board', JSON.stringify(newBoard))
-    window.sessionStorage.setItem('turn', turn)
+    window.sessionStorage.setItem('turn', newTurn)
 
     const newWinner = checkWinner(newBoard)
     if (newWinner) {
